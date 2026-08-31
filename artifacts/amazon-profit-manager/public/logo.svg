@@ -1,0 +1,6 @@
+<svg width="180" height="44" viewBox="0 0 180 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="1" y="1" width="42" height="42" rx="12" fill="#F4C542"/>
+  <path d="M12 27.5L17.5 22l4 3.5L31.5 16" stroke="#233449" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M27 16h4.5v4.5" stroke="#233449" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="53" y="28" fill="#F7F1E4" font-family="DM Sans, sans-serif" font-weight="700" font-size="17">Margem Clara</text>
+</svg>
