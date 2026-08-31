@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Amazon Profit Manager"
+description = "Sistema SaaS responsivo para vendedores da Amazon Seller Brasil controlarem vendas, custos, estoque, lucro, margem, fluxo de caixa e reposição de mercadorias."
+version = "1.0.0"
+id = "artifacts/amazon-profit-manager"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25686
+
+[services.development]
+run = "pnpm --filter @workspace/amazon-profit-manager run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/amazon-profit-manager", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/amazon-profit-manager/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25686"
+BASE_PATH = "/"
