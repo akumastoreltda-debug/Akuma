@@ -1,0 +1,13 @@
+- [Compatibilidade do gerador de API](api-generator-compatibility.md) — mantenha contrato, Zod e cliente React sincronizados antes de consumir novas rotas.
+- [Runner dos testes Amazon](amazon-sync-test-runner.md) — compile fixtures com esbuild e externalize o SDK de conectores para evitar falha do require dinâmico.
+- [Renovação concorrente de tokens Amazon](amazon-token-refresh.md) — compare o token que falhou e compartilhe a promessa de refresh para evitar invalidar um token mais novo.
+- [Notificações externas Amazon](amazon-external-notifications.md) — destinos são credenciais: criptografe em repouso, mascare na API e limite o payload externo.
+- [DDL no Supabase externo](supabase-external-ddl.md) — service role e Connector REST não executam migrations SQL; confirme um canal SQL autorizado.
+- [Acesso MCP do Supabase](supabase-mcp-access.md) — conexão saudável não basta; funções MCP SQL precisam estar montadas na sessão.
+- [Montagem de callbacks Supabase](supabase-mcp-callback-mount.md) — conexões MCP adicionadas podem existir sem callbacks mcpSupabase_* disponíveis na execução atual.
+- [Testes de rotas Amazon](amazon-schema-route-tests.md) — ao importar o router completo no runner esbuild, externalize Pino para preservar os requires dinâmicos do logger.
+- [Overrides de autofix pnpm](pnpm-audit-overrides.md) — limites inferiores abertos podem saltar de major e quebrar consumidores; fixe a série compatível corrigida.
+- [Consistência de alertas](alert-consistency.md) — filas locais não bastam entre réplicas; mutações por alerta devem ser serializadas no banco.
+- [Prontidão do schema de alertas](alerts-schema-readiness.md) — valide o contrato remoto uma vez por TTL curto e bloqueie operações com diagnóstico 503 acionável.
+- [Travas de manutenção distribuídas](distributed-maintenance-locks.md) — use uma locação singleton no banco com token e expiração para jobs periódicos via REST.
+- [Sessões Clerk no preview](preview-session-isolation.md) — o navegador do usuário e o navegador do Agent têm cookies isolados; confirme a sessão pelos logs autenticados, nunca por cookies compartilhados.
