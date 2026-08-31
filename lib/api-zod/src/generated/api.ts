@@ -945,3 +945,5 @@ export const ListInventoryResponseItem = zod.object({
 export const ListInventoryResponse = zod.array(ListInventoryResponseItem)
 
 
+
+// Deliberately stale output for merge-protection verification.
