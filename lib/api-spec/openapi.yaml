@@ -1,0 +1,999 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Amazon Profit Manager API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: dashboard
+    description: Financial overview and dashboard aggregates
+  - name: products
+    description: Product catalog and inventory settings
+  - name: suppliers
+    description: Supplier directory
+  - name: alerts
+    description: Operational alerts
+  - name: amazon
+    description: Amazon Selling Partner API integration
+  - name: sales
+    description: Sales and profitability
+  - name: inventory
+    description: Inventory snapshots and coverage
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Dashboard indicators, charts, and rankings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+        "503":
+          description: Alerts schema is incomplete or unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertsSchemaError"
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List products
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [healthy, low_stock, buy_now, out_of_stock, low_margin, loss]
+      responses:
+        "200":
+          description: Product list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Invalid product
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get product
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Product not found
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update product
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Invalid product
+        "404":
+          description: Product not found
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete product
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "204":
+          description: Product deleted
+        "404":
+          description: Product not found
+  /suppliers:
+    get:
+      operationId: listSuppliers
+      tags: [suppliers]
+      summary: List suppliers
+      responses:
+        "200":
+          description: Supplier list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Supplier"
+    post:
+      operationId: createSupplier
+      tags: [suppliers]
+      summary: Create supplier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupplierInput"
+      responses:
+        "201":
+          description: Supplier created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Supplier"
+  /alerts:
+    get:
+      operationId: listAlerts
+      tags: [alerts]
+      summary: List alerts
+      parameters:
+        - name: unreadOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Alert list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+  /alerts/{id}:
+    patch:
+      operationId: updateAlert
+      tags: [alerts]
+      summary: Mark an alert as read or unread
+      parameters:
+        - $ref: "#/components/parameters/AlertId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertUpdate"
+      responses:
+        "200":
+          description: Updated alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "404":
+          description: Alert not found
+  /amazon/status:
+    get:
+      operationId: getAmazonStatus
+      tags: [amazon]
+      summary: Get Amazon connection status
+      responses:
+        "200":
+          description: Sanitized Amazon connection status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonConnectionStatus"
+  /amazon/owner-transfer:
+    get:
+      operationId: getAmazonOwnerTransfer
+      tags: [amazon]
+      summary: Get administrative access to Amazon owner transfer
+      responses:
+        "200":
+          description: Administrative owner transfer access and current owner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonOwnerTransferAccess"
+        "403":
+          description: Authenticated user is not an authorized administrator
+    post:
+      operationId: transferAmazonOwner
+      tags: [amazon]
+      summary: Transfer the Amazon tenant to another Clerk owner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AmazonOwnerTransferInput"
+      responses:
+        "200":
+          description: Completed owner transfer audit record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonOwnerTransfer"
+        "400":
+          description: Invalid owner transfer request
+        "403":
+          description: Authenticated user is not an authorized administrator
+        "409":
+          description: Owner or transfer state conflicts with the requested transfer
+        "503":
+          description: Owner transfer storage is not available
+  /amazon/owner-transfer/audit:
+    get:
+      operationId: listAmazonOwnerTransferAudit
+      tags: [amazon]
+      summary: List recent Amazon owner transfer audit events
+      responses:
+        "200":
+          description: Recent owner transfer audit events for authorized administrators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AmazonOwnerTransferAudit"
+        "403":
+          description: Authenticated user is not an authorized administrator
+        "503":
+          description: Owner transfer audit storage is not available
+  /amazon/owner-transfer/audit/export:
+    get:
+      operationId: exportAmazonOwnerTransferAudit
+      tags: [amazon]
+      summary: Export recent Amazon owner transfer audit events as CSV
+      responses:
+        "200":
+          description: CSV export of recent administrative owner transfer audit events
+          headers:
+            Content-Disposition:
+              description: Download filename for the generated CSV
+              schema: { type: string }
+            X-Generated-At:
+              description: UTC timestamp when the export was generated
+              schema: { type: string, format: date-time }
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        "403":
+          description: Authenticated user is not an authorized administrator
+        "503":
+          description: Owner transfer audit storage is not available
+  /amazon/test:
+    post:
+      operationId: testAmazonConnection
+      tags: [amazon]
+      summary: Test the Amazon Selling Partner API connection
+      responses:
+        "200":
+          description: Connection test result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonTestResponse"
+  /amazon/test-history:
+    get:
+      operationId: listAmazonConnectionTests
+      tags: [amazon]
+      summary: List Amazon module availability test history
+      responses:
+        "200":
+          description: Sanitized Amazon connection test history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AmazonConnectionTest"
+  /amazon/alert-settings:
+    get:
+      operationId: getAmazonAlertSettings
+      tags: [amazon]
+      summary: Get Amazon module alert settings
+      responses:
+        "200":
+          description: Amazon module degradation alert settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonAlertSettings"
+    patch:
+      operationId: updateAmazonAlertSettings
+      tags: [amazon]
+      summary: Update Amazon module alert settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AmazonAlertSettingsInput"
+      responses:
+        "200":
+          description: Updated Amazon module degradation alert settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonAlertSettings"
+  /amazon/module-alerts:
+    get:
+      operationId: listAmazonModuleAlerts
+      tags: [amazon]
+      summary: List active Amazon module degradation alerts
+      responses:
+        "200":
+          description: Active Amazon module degradation alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AmazonModuleAlert"
+  /amazon/sync:
+    post:
+      operationId: syncAmazon
+      tags: [amazon]
+      summary: Synchronize orders, finances and inventory
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AmazonSyncInput"
+      responses:
+        "200":
+          description: Complete synchronization result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonSyncResponse"
+  /amazon/sync/{type}:
+    post:
+      operationId: syncAmazonType
+      tags: [amazon]
+      summary: Synchronize one Amazon data type
+      parameters:
+        - $ref: "#/components/parameters/AmazonSyncType"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AmazonSyncInput"
+      responses:
+        "200":
+          description: Synchronization result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonSyncResponse"
+  /amazon/sync-runs:
+    get:
+      operationId: listAmazonSyncRuns
+      tags: [amazon]
+      summary: List Amazon synchronization history
+      responses:
+        "200":
+          description: Synchronization history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AmazonSyncRun"
+  /sales:
+    get:
+      operationId: listSales
+      tags: [sales]
+      summary: List imported sales
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema: { type: string }
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Sales list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sale"
+  /inventory:
+    get:
+      operationId: listInventory
+      tags: [inventory]
+      summary: List current FBA inventory
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema: { type: string }
+        - name: risk
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [all, healthy, attention, unknown]
+      responses:
+        "200":
+          description: Inventory list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+components:
+  parameters:
+    ProductId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    AlertId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    AmazonSyncType:
+      name: type
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [orders, finances, inventory]
+  schemas:
+    HealthStatus:
+      type: object
+      description: Server liveness and remote Amazon retention readiness.
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        amazonRetention:
+          $ref: "#/components/schemas/AmazonRetentionHealth"
+      required:
+        - status
+        - amazonRetention
+    AmazonRetentionHealth:
+      type: object
+      description: Read-only status of the remote retention migration contract.
+      properties:
+        status:
+          type: string
+          enum: [ready, schema_incomplete, invalid_credentials, temporarily_unavailable]
+        migration:
+          type: string
+        requiredFunctions:
+          type: array
+          items:
+            type: string
+        missingFunctions:
+          type: array
+          items:
+            type: string
+        diagnostic:
+          type: string
+      required:
+        - status
+        - migration
+        - requiredFunctions
+        - missingFunctions
+    DashboardMetric:
+      type: object
+      required: [label, value, change, tone]
+      properties:
+        label: { type: string }
+        value: { type: string }
+        change: { type: string }
+        tone:
+          type: string
+          enum: [positive, negative, neutral, warning]
+    ChartPoint:
+      type: object
+      required: [label, revenue, profit]
+      properties:
+        label: { type: string }
+        revenue: { type: number }
+        profit: { type: number }
+    ProductRanking:
+      type: object
+      required: [productName, sku, revenue, profit, margin, units]
+      properties:
+        productName: { type: string }
+        sku: { type: string }
+        revenue: { type: number }
+        profit: { type: number }
+        margin: { type: number }
+        units: { type: number, multipleOf: 1 }
+    DashboardSummary:
+      type: object
+      required:
+        - periodLabel
+        - metrics
+        - chart
+        - productSales
+        - mostProfitable
+        - recentAlerts
+        - unreadAlertsCount
+      properties:
+        periodLabel: { type: string }
+        metrics:
+          type: array
+          items: { $ref: "#/components/schemas/DashboardMetric" }
+        chart:
+          type: array
+          items: { $ref: "#/components/schemas/ChartPoint" }
+        productSales:
+          type: array
+          items: { $ref: "#/components/schemas/ProductRanking" }
+        mostProfitable:
+          type: array
+          items: { $ref: "#/components/schemas/ProductRanking" }
+        recentAlerts:
+          type: array
+          items: { $ref: "#/components/schemas/Alert" }
+        unreadAlertsCount: { type: number, minimum: 0, multipleOf: 1 }
+    ProductStatus:
+      type: string
+      enum: [healthy, low_stock, buy_now, out_of_stock, low_margin, loss]
+    Product:
+      type: object
+      required:
+        - id
+        - sku
+        - asin
+        - name
+        - category
+        - supplier
+        - currentCost
+        - averageCost
+        - salePrice
+        - availableStock
+        - reservedStock
+        - inboundStock
+        - safetyStock
+        - leadTimeDays
+        - minimumOrderQuantity
+        - minimumMargin
+        - status
+        - unitsSoldMonth
+        - dailyAverage
+        - daysOfCover
+        - projectedStockout
+      properties:
+        id: { type: string }
+        sku: { type: string }
+        asin: { type: string }
+        name: { type: string }
+        imageUrl: { type: ["string", "null"] }
+        category: { type: string }
+        supplier: { type: string }
+        currentCost: { type: number }
+        averageCost: { type: number }
+        salePrice: { type: number }
+        availableStock: { type: number, multipleOf: 1 }
+        reservedStock: { type: number, multipleOf: 1 }
+        inboundStock: { type: number, multipleOf: 1 }
+        safetyStock: { type: number, multipleOf: 1 }
+        leadTimeDays: { type: number, multipleOf: 1 }
+        minimumOrderQuantity: { type: number, multipleOf: 1 }
+        minimumMargin: { type: number }
+        status: { $ref: "#/components/schemas/ProductStatus" }
+        unitsSoldMonth: { type: number, multipleOf: 1 }
+        dailyAverage: { type: number }
+        daysOfCover: { type: number }
+        projectedStockout: { type: ["string", "null"], format: date }
+    ProductInput:
+      type: object
+      required: [sku, asin, name, category, salePrice]
+      properties:
+        sku: { type: string, minLength: 1 }
+        asin: { type: string, minLength: 1 }
+        name: { type: string, minLength: 1 }
+        imageUrl: { type: ["string", "null"] }
+        category: { type: string, minLength: 1 }
+        supplier: { type: string }
+        currentCost: { type: number, minimum: 0 }
+        averageCost: { type: number, minimum: 0 }
+        salePrice: { type: number, minimum: 0 }
+        availableStock: { type: number, minimum: 0, multipleOf: 1 }
+        reservedStock: { type: number, minimum: 0, multipleOf: 1 }
+        inboundStock: { type: number, minimum: 0, multipleOf: 1 }
+        safetyStock: { type: number, minimum: 0, multipleOf: 1 }
+        leadTimeDays: { type: number, minimum: 0, multipleOf: 1 }
+        minimumOrderQuantity: { type: number, minimum: 1, multipleOf: 1 }
+        minimumMargin: { type: number, minimum: 0, maximum: 100 }
+    ProductUpdate:
+      type: object
+      properties:
+        sku: { type: string, minLength: 1 }
+        asin: { type: string, minLength: 1 }
+        name: { type: string, minLength: 1 }
+        imageUrl: { type: ["string", "null"] }
+        category: { type: string, minLength: 1 }
+        supplier: { type: string }
+        currentCost: { type: number, minimum: 0 }
+        averageCost: { type: number, minimum: 0 }
+        salePrice: { type: number, minimum: 0 }
+        availableStock: { type: number, minimum: 0, multipleOf: 1 }
+        reservedStock: { type: number, minimum: 0, multipleOf: 1 }
+        inboundStock: { type: number, minimum: 0, multipleOf: 1 }
+        safetyStock: { type: number, minimum: 0, multipleOf: 1 }
+        leadTimeDays: { type: number, minimum: 0, multipleOf: 1 }
+        minimumOrderQuantity: { type: number, minimum: 1, multipleOf: 1 }
+        minimumMargin: { type: number, minimum: 0, maximum: 100 }
+    PurchaseLimit:
+      type: object
+      required: [salePrice, targetMargin, maximumUnitCost, explanation]
+      properties:
+        salePrice: { type: number }
+        targetMargin: { type: number }
+        maximumUnitCost: { type: number }
+        explanation: { type: string }
+    Supplier:
+      type: object
+      required: [id, name, deliveryDays, productsCount]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        cnpj: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        whatsapp: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        deliveryDays: { type: number, multipleOf: 1 }
+        notes: { type: ["string", "null"] }
+        productsCount: { type: number, multipleOf: 1 }
+    SupplierInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        cnpj: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        whatsapp: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        deliveryDays: { type: number, minimum: 0, multipleOf: 1 }
+        notes: { type: ["string", "null"] }
+    Alert:
+      type: object
+      required: [id, severity, title, message, createdAt, read, acknowledgedAt]
+      properties:
+        id: { type: string }
+        severity:
+          type: string
+          enum: [success, warning, danger, info]
+        title: { type: string }
+        message: { type: string }
+        createdAt: { type: string, format: date-time }
+        read: { type: boolean }
+        acknowledgedAt: { type: ["string", "null"], format: date-time }
+    AlertUpdate:
+      type: object
+      required: [read]
+      properties:
+        read: { type: boolean }
+    AlertsSchemaError:
+      type: object
+      required: [error, code, missingTables, missingFunctions]
+      properties:
+        error: { type: string }
+        code:
+          type: string
+          enum: [ALERTS_SCHEMA_UNAVAILABLE, ALERTS_SCHEMA_INCOMPLETE]
+        missingTables:
+          type: array
+          items: { type: string }
+        missingFunctions:
+          type: array
+          items: { type: string }
+    AmazonConnectionStatus:
+      type: object
+      required: [configured, marketplaceId, marketplaceName, connectionStatus, missingSecrets]
+      properties:
+        configured: { type: boolean }
+        marketplaceId: { type: string }
+        marketplaceName: { type: string }
+        connectionStatus:
+          type: string
+          enum: [not_configured, connected, invalid, error]
+        lastTestAt: { type: ["string", "null"], format: date-time }
+        lastSyncAt: { type: ["string", "null"], format: date-time }
+        lastError: { type: ["string", "null"] }
+        missingSecrets:
+          type: array
+          items: { type: string }
+    AmazonOwnerTransferAccess:
+      type: object
+      required: [isAdmin, currentOwnerClerkId]
+      properties:
+        isAdmin: { type: boolean }
+        currentOwnerClerkId: { type: ["string", "null"] }
+    AmazonOwnerTransferInput:
+      type: object
+      required: [currentOwnerClerkId, newOwnerClerkId, reason]
+      properties:
+        currentOwnerClerkId: { type: string, minLength: 1, maxLength: 255 }
+        newOwnerClerkId: { type: string, minLength: 1, maxLength: 255 }
+        reason: { type: string, minLength: 10, maxLength: 1000 }
+    AmazonOwnerTransfer:
+      type: object
+      required: [id, actorClerkId, previousOwnerClerkId, newOwnerClerkId, reason, transferredAt]
+      properties:
+        id: { type: string }
+        actorClerkId: { type: string }
+        previousOwnerClerkId: { type: string }
+        newOwnerClerkId: { type: string }
+        reason: { type: string }
+        transferredAt: { type: string, format: date-time }
+    AmazonOwnerTransferAudit:
+      type: object
+      required: [id, actorClerkId, previousOwnerClerkId, newOwnerClerkId, reason, transferredAt]
+      properties:
+        id: { type: string }
+        actorClerkId: { type: string }
+        previousOwnerClerkId: { type: string }
+        newOwnerClerkId: { type: string }
+        reason: { type: string }
+        transferredAt: { type: string, format: date-time }
+    AmazonTestResponse:
+      type: object
+      required: [success, message, testedAt, durationMs, checks]
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        testedAt: { type: string, format: date-time }
+        durationMs: { type: number, minimum: 0, multipleOf: 1 }
+        checks:
+          type: array
+          items: { $ref: "#/components/schemas/AmazonConnectionTestCheck" }
+    AmazonConnectionTestCheck:
+      type: object
+      required: [type, status, count, durationMs, errorCategory]
+      properties:
+        type:
+          type: string
+          enum: [orders, finances, inventory]
+        status:
+          type: string
+          enum: [completed, failed]
+        count: { type: number, minimum: 0, multipleOf: 1 }
+        durationMs: { type: number, minimum: 0, multipleOf: 1 }
+        errorCategory:
+          type: ["string", "null"]
+          enum: [authorization, signature, throttling, configuration, payload, availability, latency, unknown, null]
+        error: { type: ["string", "null"] }
+    AmazonConnectionTest:
+      type: object
+      required: [id, testedAt, durationMs, success, checks]
+      properties:
+        id: { type: string }
+        testedAt: { type: string, format: date-time }
+        durationMs: { type: number, minimum: 0, multipleOf: 1 }
+        success: { type: boolean }
+        checks:
+          type: array
+          items: { $ref: "#/components/schemas/AmazonConnectionTestCheck" }
+    AmazonAlertSettings:
+      type: object
+      required: [sampleWindow, failureThreshold, latencyThresholdMs, enabled, notificationChannel, notificationConfigured, notificationDestinationHint]
+      properties:
+        sampleWindow: { type: number, minimum: 1, maximum: 20, multipleOf: 1 }
+        failureThreshold: { type: number, minimum: 1, maximum: 20, multipleOf: 1 }
+        latencyThresholdMs: { type: number, minimum: 100, maximum: 600000, multipleOf: 1 }
+        enabled: { type: boolean }
+        notificationChannel:
+          type: [string, "null"]
+          enum: [slack, discord, microsoft_teams, webhook, null]
+        notificationConfigured: { type: boolean }
+        notificationDestinationHint: { type: [string, "null"] }
+    AmazonAlertSettingsInput:
+      type: object
+      required: [sampleWindow, failureThreshold, latencyThresholdMs, enabled, notificationChannel]
+      properties:
+        sampleWindow: { type: number, minimum: 1, maximum: 20, multipleOf: 1 }
+        failureThreshold: { type: number, minimum: 1, maximum: 20, multipleOf: 1 }
+        latencyThresholdMs: { type: number, minimum: 100, maximum: 600000, multipleOf: 1 }
+        enabled: { type: boolean }
+        notificationChannel:
+          type: [string, "null"]
+          enum: [slack, discord, microsoft_teams, webhook, null]
+        notificationDestination:
+          type: [string, "null"]
+          maxLength: 2048
+    AmazonModuleAlert:
+      type: object
+      required: [module, failureCategory, observedLatencyMs, degradedSamples, sampleWindow, evaluatedAt, lastAlertAt]
+      properties:
+        module:
+          type: string
+          enum: [orders, finances, inventory]
+        failureCategory:
+          type: string
+          enum: [authorization, signature, throttling, configuration, payload, availability, latency, unknown]
+        observedLatencyMs: { type: number, minimum: 0, multipleOf: 1 }
+        degradedSamples: { type: number, minimum: 0, multipleOf: 1 }
+        sampleWindow: { type: number, minimum: 1, multipleOf: 1 }
+        evaluatedAt: { type: string, format: date-time }
+        lastAlertAt: { type: ["string", "null"], format: date-time }
+    AmazonSyncInput:
+      type: object
+      properties:
+        since: { type: ["string", "null"], format: date-time }
+    AmazonSyncStep:
+      type: object
+      required: [type, status, count, durationMs, errorCategory]
+      properties:
+        type:
+          type: string
+          enum: [orders, finances, inventory]
+        status:
+          type: string
+          enum: [completed, failed, skipped]
+        count: { type: number, minimum: 0, multipleOf: 1 }
+        durationMs: { type: number, minimum: 0, multipleOf: 1 }
+        errorCategory:
+          type: ["string", "null"]
+          enum: [authorization, signature, throttling, configuration, payload, availability, latency, unknown, null]
+        error: { type: ["string", "null"] }
+    AmazonSyncResponse:
+      type: object
+      required: [runId, syncType, status, startedAt, durationMs, steps, totals]
+      properties:
+        runId: { type: string }
+        syncType:
+          type: string
+          enum: [full, orders, finances, inventory]
+        status:
+          type: string
+          enum: [completed, partial, failed, skipped]
+        startedAt: { type: string, format: date-time }
+        completedAt: { type: ["string", "null"], format: date-time }
+        durationMs: { type: number, minimum: 0, multipleOf: 1 }
+        steps:
+          type: array
+          items: { $ref: "#/components/schemas/AmazonSyncStep" }
+        totals:
+          type: object
+          required: [orders, finances, inventory]
+          properties:
+            orders: { type: number, minimum: 0, multipleOf: 1 }
+            finances: { type: number, minimum: 0, multipleOf: 1 }
+            inventory: { type: number, minimum: 0, multipleOf: 1 }
+        error: { type: ["string", "null"] }
+    AmazonSyncRun:
+      type: object
+      required: [id, syncType, status, startedAt, durationMs, counts, steps]
+      properties:
+        id: { type: string }
+        syncType:
+          type: string
+          enum: [full, orders, finances, inventory]
+        status:
+          type: string
+          enum: [completed, partial, failed, skipped]
+        startedAt: { type: string, format: date-time }
+        completedAt: { type: ["string", "null"], format: date-time }
+        durationMs: { type: number, minimum: 0, multipleOf: 1 }
+        counts:
+          type: object
+          required: [orders, finances, inventory]
+          properties:
+            orders: { type: number, minimum: 0, multipleOf: 1 }
+            finances: { type: number, minimum: 0, multipleOf: 1 }
+            inventory: { type: number, minimum: 0, multipleOf: 1 }
+        steps:
+          type: array
+          items: { $ref: "#/components/schemas/AmazonSyncStep" }
+        error: { type: ["string", "null"] }
+    Sale:
+      type: object
+      required: [id, amazonOrderNumber, marketplaceId, sku, asin, productName, soldAt, quantity, unitPrice, revenueTotal, commission, fbaFee, otherFees, refunds, adjustments, payout, productCost, netProfit, netMargin]
+      properties:
+        id: { type: string }
+        amazonOrderNumber: { type: string }
+        marketplaceId: { type: string }
+        sku: { type: string }
+        asin: { type: ["string", "null"] }
+        productName: { type: string }
+        soldAt: { type: string, format: date-time }
+        quantity: { type: number, multipleOf: 1 }
+        unitPrice: { type: number }
+        revenueTotal: { type: number }
+        commission: { type: number }
+        fbaFee: { type: number }
+        otherFees: { type: number }
+        refunds: { type: number }
+        adjustments: { type: number }
+        payout: { type: number }
+        productCost: { type: number }
+        netProfit: { type: number }
+        netMargin: { type: number }
+    InventoryItem:
+      type: object
+      required: [id, sku, asin, productName, available, reserved, inbound, total, coverageDays, status, lastSyncedAt]
+      properties:
+        id: { type: string }
+        sku: { type: string }
+        asin: { type: ["string", "null"] }
+        productName: { type: string }
+        available: { type: number, multipleOf: 1 }
+        reserved: { type: number, multipleOf: 1 }
+        inbound: { type: number, multipleOf: 1 }
+        total: { type: number, multipleOf: 1 }
+        coverageDays: { type: number }
+        status:
+          type: string
+          enum: [healthy, attention, unknown]
+        lastSyncedAt: { type: ["string", "null"], format: date-time }
+        source: { type: string }
+
